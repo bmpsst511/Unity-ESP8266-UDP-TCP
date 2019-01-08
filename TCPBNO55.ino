@@ -1,30 +1,29 @@
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include <WiFiUDP.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 
-int ch1 =0;
-int ch2 =1;
+int ch1 =3;
+int ch2 =4;
 int ch3 =2;
 
-const char* ssid =/*"iPhone";*/ "dlink";
-const char* password =/* "19940625";*/"468255000";
+const char* ssid =/*"LeeiPhone";*/ "dlink";
+const char* password =/*"hnwl0618";*/"468255000";
 String PoseX, PoseY, PoseZ, PoseX2, PoseY2, PoseZ2, PoseX3, PoseY3, PoseZ3;
  /* Set the delay between fresh samples */
-#define BNO055_SAMPLERATE_DELAY_MS (100)
+#define BNO055_SAMPLERATE_DELAY_MS (1000)
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 Adafruit_BNO055 bno2 = Adafruit_BNO055(55);
 Adafruit_BNO055 bno3 = Adafruit_BNO055(55);
 
-  char*         TKDssid;
-  char*         TKDpassword;
-  IPAddress     TKDServer(192,168,1,112);
-  WiFiClient    TKDClient;
+  char*         TCPssid;
+  char*         TCPpassword;
+  IPAddress     TCPServer(192,168,1,113);
+  WiFiClient    TCPClient;
 /**************************************************************************/
 /*
     Displays some basic information on this sensor from the unified
@@ -55,7 +54,7 @@ void setup() {
   Serial.println("Connecting");
  
    WiFi.mode(WIFI_STA);            // To Avoid Broadcasting An SSID
-    WiFi.begin("dlink","468255000");          // The SSID That We Want To Connect To
+    WiFi.begin(ssid,password);          // The SSID That We Want To Connect To
 
     // Printing Message For User That Connetion Is On Process ---------------
     Serial.println("!--- Connecting To " + WiFi.SSID() + " ---!");
@@ -67,7 +66,7 @@ void setup() {
     Serial.println("Connected To      : " + String(WiFi.SSID()));
     Serial.println("Signal Strenght   : " + String(WiFi.RSSI()) + " dBm");
     Serial.print  ("Server IP Address : ");
-    Serial.println(TKDServer);
+    Serial.println(TCPServer);
     Serial.print  ("Device IP Address : ");
     Serial.println(WiFi.localIP());
 // Conecting The Device As A Client -------------------------------------
@@ -111,7 +110,7 @@ void setup() {
 }
  
 void loop() {
-    if(TKDClient.connect(TKDServer, 3000))
+    if(TCPClient.connect(TCPServer, 27))
     {     
    // Possible vector values can be:
   // - VECTOR_ACCELEROMETER - m/s^2
@@ -222,8 +221,8 @@ void loop() {
 //   disableMuxPort(ch3); //Tell mux to disconnect from this port
 
        // Send the distance to the client, along with a break to separate our messages
-  TKDClient.print(PoseX+";"+PoseY+";"+PoseZ+";"+PoseX2+";"+PoseY2+";"+PoseZ2);
-  //Client.println(PoseX+";"+PoseY+";"+PoseZ);
+  //TKDClient.print(PoseX+";"+PoseY+";"+PoseZ+";"+PoseX2+";"+PoseY2+";"+PoseZ2);
+  TCPClient.print(PoseX+";"+PoseY+";"+PoseZ);
   delay(BNO055_SAMPLERATE_DELAY_MS);
  } 
 }
