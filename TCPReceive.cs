@@ -7,7 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-public class TCPReceive:MonoBehaviour
+public class TCP_Cube:MonoBehaviour
 {
     //以下默认都是私有的成员
     Socket serverSocket; //服务器端socket
@@ -19,22 +19,23 @@ public class TCPReceive:MonoBehaviour
     byte[] sendData=new byte[1024]; //发送的数据，必须为字节
     int recvLen; //接收的数据长度
     Thread connectThread; //连接线程
- 	public float RotateX, RotateY, RotateZ, PoseX2, PoseY2, PoseZ2;
+    public int RotateX, RotateY, RotateZ;
+    System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();//引用stopwatch物件
+
+    public GameObject cube;
+
     //初始化
     void InitSocket()
     {
-        //定义侦听端口,侦听任何IP
-        ipEnd=new IPEndPoint(IPAddress.Parse("192.168.1.112"),3000);
-        //定义套接字类型,在主线程中定义
+        //定義監聽端口,監聽任何IP
+        ipEnd=new IPEndPoint(IPAddress.Any,27);
+        //定義套接字類型,在主線程中定義
         serverSocket=new Socket(AddressFamily.InterNetwork,SocketType.Stream,ProtocolType.Tcp);
-        //连接
+        //伺服端绑定ip
         serverSocket.Bind(ipEnd);
-        //开始侦听,最大10个连接
+        //開始監聽,最多10個同時監聽
         serverSocket.Listen(10);
-
-        
-             
-        //开启一个线程连接，必须的，否则主线程卡死
+        //使用新的執行緒執行連線，否則遊戲會卡死
         connectThread=new Thread(new ThreadStart(SocketReceive));
         connectThread.Start();
     }
@@ -64,36 +65,44 @@ public class TCPReceive:MonoBehaviour
         clientSocket.Send(sendData,sendData.Length,SocketFlags.None);
     }*/
 
-    //服务器接收
+    //伺服器接收
     void SocketReceive()
     {
-        //连接
+        //連接
         SocketConnet();      
-        //进入接收循环
+        //接收迴圈
         while(true)
         {
-            //对data清零
+            sw.Start();
+            for(int i=0;i<10;i++)
+            {
+            var filter = new LowPassFilter(0.95f);
+            //清空數據
             recvData=new byte[1024];
-            //获取收到的数据的长度
+            //獲取收到的數據長度
             recvLen=clientSocket.Receive(recvData);
-            //如果收到的数据长度为0，则重连并进入下一个循环
-            if(recvLen==0)
+            //如果收到的數據長度為0，則重新連線進入下一個循環
+              if(recvLen==0)
             {
                 SocketConnet();
                 continue;
-			}
-            //输出接收到的数据
+            }
+            //輸出接收到的數據
             recvStr=Encoding.ASCII.GetString(recvData,0,recvLen);
             print(recvStr);
 			  //分割字串
             char[] splitChar = { ' ', ',', ':', '\t', ';' };
             string[] dataRaw = recvStr.Split(splitChar);
-            RotateX = float.Parse(dataRaw[0]);
-            RotateY = float.Parse(dataRaw[1]);
-            RotateZ = float.Parse(dataRaw[2]);
-            PoseX2 = float.Parse(dataRaw[3]);
-            PoseY2 = float.Parse(dataRaw[4]);
-            PoseZ2 = float.Parse(dataRaw[5]);
+            RotateX = int.Parse(dataRaw[0]);
+            RotateY = int.Parse(dataRaw[1]);
+            RotateZ = int.Parse(dataRaw[2]);
+            filter.Step(RotateX);
+            filter.Step(RotateY);
+            filter.Step(RotateZ);
+            }
+            sw.Stop();//碼錶停止
+            string result1 = sw.Elapsed.TotalMilliseconds.ToString();
+            print(result1); 
         }
     }
 
@@ -116,19 +125,35 @@ public class TCPReceive:MonoBehaviour
 
     // Use this for initialization
     void Start()
-    {
+    {        
+        sw.Reset();//碼表歸零
         InitSocket(); //在这里初始化server
     }
 
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
 		//SocketReceive();
+        cube.transform.rotation = Quaternion.Euler(RotateZ, -RotateX , -RotateY);//cjmcu-055
     }
 
     void OnApplicationQuit()
     {
         SocketQuit();
+    }
+        public class LowPassFilter
+    {
+        private float _smoothingFactor;
+        public float SmoothedValue;
+        public LowPassFilter(float smoothingFactor)
+        {
+            _smoothingFactor = smoothingFactor;
+        }
+
+        public void Step(float sensorValue)
+        {
+            SmoothedValue = _smoothingFactor * sensorValue + (1 - _smoothingFactor) * SmoothedValue;
+        }
     }
 }
