@@ -7,7 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-public class TCP_Cube:MonoBehaviour
+public class TCPServerReceive:MonoBehaviour
 {
     //以下默認都是私有的成員
     Socket serverSocket; //目標socket
@@ -55,7 +55,7 @@ public class TCP_Cube:MonoBehaviour
         //print("Connect with "+ipEndClient.Address.ToString()+":"+ipEndClient.Port.ToString());
     }
 
-   /* void SocketSend(string sendStr)
+/* void SocketSend(string sendStr)
     {
         //清空發送緩存
         sendData=new byte[1024];
@@ -82,7 +82,7 @@ public class TCP_Cube:MonoBehaviour
             //獲取收到的數據長度
             recvLen=clientSocket.Receive(recvData);
             //如果收到的數據長度為0，則重新連線進入下一個循環
-              if(recvLen==0)
+            if(recvLen==0)
             {
                 SocketConnet();
                 continue;
